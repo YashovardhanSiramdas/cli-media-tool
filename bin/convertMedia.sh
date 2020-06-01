@@ -1,21 +1,10 @@
-#!/usr/local/bin/bash
-#
+#!/usr/bin/env bash
+
 version="2.2.0"               # Sets version variable for this script
 #
 scriptTemplateVersion="1.5.0" # Version of scriptTemplate.sh that this script is based on
-#
-#
-# ##################################################
 
-# Provide a variable with the location of this script.
 scriptPath="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-
-# Source Scripting Utilities
-# -----------------------------------
-# These shared utilities provide many functions which are needed to provide
-# the functionality in this boilerplate. This script will fail if they can
-# not be found.
-# -----------------------------------
 
 utilsLocation="${scriptPath}/../lib/utils.sh" # Update this path to find the utilities.
 
@@ -82,7 +71,7 @@ tmpDir="/tmp/${scriptName}.${RANDOM}.${RANDOM}.${RANDOM}.${$}"
 # Save to Desktop use: $HOME/Desktop/${scriptBasename}.log
 # Save to standard user log location use: $HOME/Library/Logs/${scriptBasename}.log
 # -----------------------------------
-logFile="${HOME}/Library/Logs/${scriptBasename}.log"
+logFile="./${scriptBasename}.log"
 
 # Check for Dependencies
 # -----------------------------------
@@ -93,7 +82,7 @@ logFile="${HOME}/Library/Logs/${scriptBasename}.log"
 # Homebrew Casks. Ruby and gems via RVM.
 # -----------------------------------
 homebrewDependencies=(ffmpeg jq rename)
-caskDependencies=(xld)
+caskDependencies=()
 gemDependencies=()
 
 function mainScript() {
@@ -195,24 +184,24 @@ function mainScript() {
       esac
     fi
 
-    # # Do things on audio files
-    # if [[ "${audioTypes[*]}" =~ ${file##*.} ]]; then
+    # Do things on audio files
+    if [[ "${audioTypes[*]}" =~ ${file##*.} ]]; then
 
-    #   # Ensure a user sets an output format since we don't have a default.
-    #   if [[ -z ${userOutput} ]]; then
-    #     warning "Please specify an output audio format using '-o, --output'.  Exiting"
-    #     safeExit
-    #   fi
+      # Ensure a user sets an output format since we don't have a default.
+      if [[ -z ${userOutput} ]]; then
+        warning "Please specify an output audio format using '-o, --output'.  Exiting"
+        safeExit
+      fi
 
-    #   # Confirm if a user wants to convert audio to it's own format
-    #   # if [[ "${file##*.}" == "${userOutput}" ]]; then
-    #   #   warning "You are attempting to convert a ${file##*.} file to ${userOutput}."
-    #   #   seek_confirmation "Do you want to proceed?"
-    #   #   if is_not_confirmed; then
-    #   #     continue
-    #   #   fi
-    #   # fi
-    # fi
+      # Confirm if a user wants to convert audio to it's own format
+      # if [[ "${file##*.}" == "${userOutput}" ]]; then
+      #   warning "You are attempting to convert a ${file##*.} file to ${userOutput}."
+      #   seek_confirmation "Do you want to proceed?"
+      #   if is_not_confirmed; then
+      #     continue
+      #   fi
+      # fi
+    fi
 
     # Reads user input for format (-o, --output)
     if [ -n "${userOutput}" ]; then
@@ -220,19 +209,19 @@ function mainScript() {
     fi
   }
 
-  # function concatFiles() {
-  #   if ${concat}; then
-  #     # Create variable for ffmpeg to concacenate the files
-  #     concatConvert="concat:$(join "|" "${filesToConvert[@]}")"
-  #     # Create the variable for the deleteOriginalFile function
-  #     concatDelete="$(join " " ${filesToConvert[@]})"
+  function concatFiles() {
+    if ${concat}; then
+      # Create variable for ffmpeg to concacenate the files
+      concatConvert="concat:$(join "|" "${filesToConvert[@]}")"
+      # Create the variable for the deleteOriginalFile function
+      concatDelete="$(join " " ${filesToConvert[@]})"
 
-  #     # Ask the user for the name of the newly created file
-  #     input "Please enter the name of the new file to be created. [ENTER]: "
-  #     read concatOutput
+      # Ask the user for the name of the newly created file
+      input "Please enter the name of the new file to be created. [ENTER]: "
+      read concatOutput
 
-  #   fi
-  # }
+    fi
+  }
 
   function parseJSON() {
     local ii
@@ -461,98 +450,98 @@ function mainScript() {
       fi
   }
 
-  # function convertAudio() {
+  function convertAudio() {
 
-  #   verbose "Running 'convertAudio' function"
-  #   # note on XLD:  If you have XLD installed and configured, lossless audio conversion
-  #   #               will be run using built-in XLD profiles.  You can disable this by
-  #   #               changing ensuring that XLD=0 in sections below.
-  #   #
-  #   # #############################################################
+    verbose "Running 'convertAudio' function"
+    # note on XLD:  If you have XLD installed and configured, lossless audio conversion
+    #               will be run using built-in XLD profiles.  You can disable this by
+    #               changing ensuring that XLD=0 in sections below.
+    #
+    # #############################################################
 
-  #   # Build the Conversion Command
-  #   # ########################################
+    # Build the Conversion Command
+    # ########################################
 
-  #   # Set mono/64k conversion for audiobooks
-  #   if ${spokenWord}; then
-  #     monoConversion="-ab 96k -ac 1"
-  #   fi
+    # Set mono/64k conversion for audiobooks
+    if ${spokenWord}; then
+      monoConversion="-ab 96k -ac 1"
+    fi
 
-  #   if [[ "${userOutput,,}" == "alac" ]]; then
-  #     if type_exists "xld"; then
-  #       XLD=1
-  #       #audioConvertCommand="--profile FLACtoALAC"
-  #       audioConvertCommand="-f alac"
-  #       outputFormat="m4a"
-  #     else
-  #       audioConvertCommand="-acodec alac"
-  #     fi
-  #   elif [[ "${userOutput,,}" == "flac" ]]; then
-  #     if type_exists "xld"; then
-  #       XLD=1
-  #       audioConvertCommand="-f flac"
-  #     else
-  #       audioConvertCommand="-c:a flac ${monoConversion}"
-  #     fi
-  #   elif [[ "${userOutput,,}" == "aac" || "${userOutput,,}" == "m4a" ]]; then
-  #     outputFormat="m4a"
-  #     # Pick the best aac audio encoder
-  #     if ffmpeg -version | grep enable-libfdk-aac >/dev/null; then
-  #       # set variable bit rate to '5', the highest unless we are doing spoken word
-  #       if ${spokenWord}; then
-  #         aacEncoder='libfdk_aac'
-  #       else
-  #         aacEncoder='libfdk_aac -vbr 5'
-  #       fi
-  #     else
-  #       aacEncoder='libfaac -q:a 400'
-  #     fi
-  #     if type_exists "xlds"; then
-  #       XLD=1
-  #       audioConvertCommand="-f aac" && verbose "using xld. audioConvertCommand = -f aac "
-  #     else
-  #       audioConvertCommand="-acodec ${aacEncoder} ${monoConversion}"
-  #     fi
-  #   elif [[ "${userOutput,,}" == "mp3" ]]; then
-  #     # Can we convert to mp3? Do we have an ffmpeg encoder?
-  #     if ffmpeg -version | grep enable-libmp3lame >/dev/null; then
-  #       mp3Encoder='libmp3lame'
-  #     # else
-  #     #   warning "No workable ffmpeg mp3 encoder. Skipping ${f}..."
-  #     #   continue
-  #     fi
-  #     # Take user specified bitrate
-  #     if [ -n "$bitrate" ]; then
-  #       bitrate="${bitrate%k}k" # Ensure 'k' is at the end of any bitrate sent to ffmpeg
-  #       ffmpegBitrate="-ab ${bitrate}"
-  #     else
-  #       ffmpegBitrate="-qscale:a 0"
-  #     fi
-  #     # Set mono conversion for audiobooks
-  #     if ${spokenWord}; then
-  #      ffmpegBitrate="${monoConversion}"
-  #     fi
-  #     audioConvertCommand="-acodec ${mp3Encoder} ${ffmpegBitrate} -map_metadata 0 -id3v2_version 3"
-  #   elif [[ "${userOutput,,}" == "m4b" ]]; then
-  #     # m4b is exactly the same as m4a except it tells Apple that the file is an audiobook.
-  #     # so we use m4a conversion here and then rename the output file to m4b
-  #     # The main difference here is that we make the assumption that audiobooks don't
-  #     # need high fidelity or stereo so we make them mono and low bit-rate.
+    if [[ "${userOutput,,}" == "alac" ]]; then
+      if type_exists "xld"; then
+        XLD=1
+        #audioConvertCommand="--profile FLACtoALAC"
+        audioConvertCommand="-f alac"
+        outputFormat="m4a"
+      else
+        audioConvertCommand="-acodec alac"
+      fi
+    elif [[ "${userOutput,,}" == "flac" ]]; then
+      if type_exists "xld"; then
+        XLD=1
+        audioConvertCommand="-f flac"
+      else
+        audioConvertCommand="-c:a flac ${monoConversion}"
+      fi
+    elif [[ "${userOutput,,}" == "aac" || "${userOutput,,}" == "m4a" ]]; then
+      outputFormat="m4a"
+      # Pick the best aac audio encoder
+      if ffmpeg -version | grep enable-libfdk-aac >/dev/null; then
+        # set variable bit rate to '5', the highest unless we are doing spoken word
+        if ${spokenWord}; then
+          aacEncoder='libfdk_aac'
+        else
+          aacEncoder='libfdk_aac -vbr 5'
+        fi
+      else
+        aacEncoder='libfaac -q:a 400'
+      fi
+      if type_exists "xlds"; then
+        XLD=1
+        audioConvertCommand="-f aac" && verbose "using xld. audioConvertCommand = -f aac "
+      else
+        audioConvertCommand="-acodec ${aacEncoder} ${monoConversion}"
+      fi
+    elif [[ "${userOutput,,}" == "mp3" ]]; then
+      # Can we convert to mp3? Do we have an ffmpeg encoder?
+      if ffmpeg -version | grep enable-libmp3lame >/dev/null; then
+        mp3Encoder='libmp3lame'
+      # else
+      #   warning "No workable ffmpeg mp3 encoder. Skipping ${f}..."
+      #   continue
+      fi
+      # Take user specified bitrate
+      if [ -n "$bitrate" ]; then
+        bitrate="${bitrate%k}k" # Ensure 'k' is at the end of any bitrate sent to ffmpeg
+        ffmpegBitrate="-ab ${bitrate}"
+      else
+        ffmpegBitrate="-qscale:a 0"
+      fi
+      # Set mono conversion for audiobooks
+      if ${spokenWord}; then
+       ffmpegBitrate="${monoConversion}"
+      fi
+      audioConvertCommand="-acodec ${mp3Encoder} ${ffmpegBitrate} -map_metadata 0 -id3v2_version 3"
+    elif [[ "${userOutput,,}" == "m4b" ]]; then
+      # m4b is exactly the same as m4a except it tells Apple that the file is an audiobook.
+      # so we use m4a conversion here and then rename the output file to m4b
+      # The main difference here is that we make the assumption that audiobooks don't
+      # need high fidelity or stereo so we make them mono and low bit-rate.
 
-  #     # Pick the best aac audio encoder
-  #     if ffmpeg -version | grep enable-libfdk-aac >/dev/null; then
-  #       # set variable bit rate to '5', the highest
-  #       aacEncoder="libfdk_aac ${monoConversion} -f m4a"
-  #     else
-  #       aacEncoder="libfaac ${monoConversion} -f m4a"
-  #     fi
-  #     audioConvertCommand="-acodec ${aacEncoder}"
-  #   else
-  #     warning "We don't know what to do with audio format: '${outputFormat}'."
-  #     warning "Exiting"
-  #     safeExit
-  #   fi
-  # }
+      # Pick the best aac audio encoder
+      if ffmpeg -version | grep enable-libfdk-aac >/dev/null; then
+        # set variable bit rate to '5', the highest
+        aacEncoder="libfdk_aac ${monoConversion} -f m4a"
+      else
+        aacEncoder="libfaac ${monoConversion} -f m4a"
+      fi
+      audioConvertCommand="-acodec ${aacEncoder}"
+    else
+      warning "We don't know what to do with audio format: '${outputFormat}'."
+      warning "Exiting"
+      safeExit
+    fi
+  }
 
   function setOutputDirectory() {
     if ${verbose}; then v="-v" ; fi
@@ -725,11 +714,11 @@ function mainScript() {
     convertToFormat
     # Then we set the appropriate conversion commands
     if [[ "${videoTypes[*]}" =~ "$(echo ${file##*.} | tr '[:upper:]' '[:lower:]')" ]]; then convertVideo; fi
-    # if [[ "${audioTypes[*]}" =~ "$(echo ${file##*.} | tr '[:upper:]' '[:lower:]')" ]]; then convertAudio; fi
+    if [[ "${audioTypes[*]}" =~ "$(echo ${file##*.} | tr '[:upper:]' '[:lower:]')" ]]; then convertAudio; fi
     # Then we tell the script where to output the file
     setOutputDirectory
     # Then we check if we are supposed to concatenate the files
-    # concatFiles
+    concatFiles
     # Then we generate the name for the new file
     setOutputFile
     # Then we actually do the conversion
@@ -941,3 +930,4 @@ mainScript
 
 # Exit cleanly
 safeExit
+
